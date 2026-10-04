@@ -40,17 +40,17 @@ class NN_model:
 
         else: raise TypeError(f'input array is not able to used. must be numpy array and num cols must be {self.num_token_attributes} not {input_array.shape[1]}')
 
-    def change_hidden_layer_weight(self,layer_num,index,attribute_row_index,attribute_col_index,value):
-        self.hidden_layer_array[layer_num].change_weight(index,attribute_row_index,attribute_col_index,value)
+    def change_hidden_layer_weight(self,layer_num,attribute_row_index,attribute_col_index,value):
+        self.hidden_layer_array[layer_num].change_weight(attribute_row_index,attribute_col_index,value)
 
-    def change_hidden_layer_bias(self,layer_num,index,method,value):
-        self.hidden_layer_array[layer_num].change_bias_value(index,value)
+    def change_hidden_layer_bias(self,layer_num,method,value):
+        self.hidden_layer_array[layer_num].change_bias_value(value)
 
 class hidden_layer:
     def __init__(self,layer_len):#hidden layer is always square so output shape is identical to input shape
 
         if isinstance(layer_len, int):
-            self.layer = [np.ones((layer_len,layer_len),order='f')]#order f for better matmul perf
+            self.neurons = [np.ones((layer_len,layer_len),order='f')]#order f for better matmul perf
 
         else: raise TypeError('First arg was not a numpy array')
 
@@ -62,18 +62,18 @@ class hidden_layer:
         layer_output += self.bias
         return layer_output
 
-    def change_weight(self,index,attribute_row_index,attribute_col_index,method,value):
+    def change_weight(self,attribute_row_index,attribute_col_index,method,value):
 
-        self.layer[index][attribute_row_index, attribute_col_index] += value
+        self.layer[attribute_row_index, attribute_col_index] += value
 
         else: raise ValueError('not supported input for arg 2')
             
 
-    def change_bias_value(self,index, value):
+    def change_bias_value(self, value):
 
         if isinstance(self.bias,np.ndarray):
 
-            self.bias[index] += value
+            self.bias += value
 
             else: raise ValueError('not supported input for arg 2')
 
@@ -85,16 +85,19 @@ class hidden_layer:
         if index < 0 or index >= np.shape(self.layer)[0]: raise ValueError('index out of bounds')
         self.layer = np.delete(self.layer,index,axis=0)#remove the row at the specified index
 
-def forward_error(nn_model,input_array,expected_output):
+def forward_error(output_array,expected_output_array):
     """
     Calculates the forward error of a neural network model given an input array and expected output. 
     The function first checks if the input array is a numpy array and has the correct number of columns. 
     It then passes the input through the hidden layers of the model and calculates the output using the output layer weights and bias. 
     Finally, it returns the difference between the calculated output and expected output.
     """
-    if isinstance(input_array, np.ndarray) and np.shape(input_array)[1] == np.shape(nn_model.num_token_attributes)[0]:
-        nnput = nn_model.predict(input_array)
-        dif = np.subtract(nnput,expected_output)
-        return (dif**2)**(0.5)#return the root mean square error
+    if len(output_array) != len(expected_output_array): raise ValueError("Input array and expected output array must be the same length")
 
-    else: raise TypeError(f'input array is not able to used. must be numpy array and num cols must be {nn_model.num_token_attributes} not {input_array.shape[1]}')):
+    #check if the input array is a numpy array and has the correct number of columns
+    for output in output_array:
+        if isinstance(output, np.ndarray) == False or np.shape(output)[1] != np.shape(nn_model.num_token_attributes)[0]:
+            raise TypeError(f'input array is not able to used. must be numpy array and num cols must be {nn_model.num_token_attributes} not {output.shape[1]}')
+
+    dif = np.subtract(output_array, expected_output_array)
+    return (dif**2)**(0.5)#return the root mean square error
